@@ -55,6 +55,7 @@ WORKDIR $APP_DIR
 # copy files
 COPY --from=build-env /go/src/core-config-seed-go/$APP .
 COPY ./launch-consul-config.sh .
+COPY ./docker-entrypoint.sh .
 COPY ./res ./res
 COPY ./config ./config
 
