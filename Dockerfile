@@ -29,18 +29,16 @@ RUN go get github.com/magiconair/properties
 RUN go get gopkg.in/yaml.v2
 
 # set the working directory
-RUN mkdir -p $GOPATH/src/core-config-seed-go
-WORKDIR $GOPATH/src/core-config-seed-go
+WORKDIR $GOPATH/src/github.com/edgexfoundry/core-config-seed-go
 
 # copy go source files
-COPY ./configseed ./configseed
-COPY ./main ./main
+COPY . .
 
 # build
-RUN CGO_ENABLED=0 GOOS=linux go build -o core-config-seed-go -a -ldflags '-extldflags "-static"' main/main.go
+RUN apk update && apk add make
+RUN make test
+RUN make build
 
-
-# Consul Docker image for EdgeX Foundry
 FROM consul:0.7.3
 
 # environment variables
@@ -53,7 +51,7 @@ ENV CONSUL_ARGS="-server -client=0.0.0.0 -bootstrap -ui"
 WORKDIR $APP_DIR
 
 # copy files
-COPY --from=build-env /go/src/core-config-seed-go/$APP .
+COPY --from=build-env /go/src/github.com/edgexfoundry/core-config-seed-go/$APP .
 COPY ./launch-consul-config.sh .
 COPY ./docker-entrypoint.sh .
 COPY ./res ./res

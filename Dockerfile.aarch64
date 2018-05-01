@@ -10,17 +10,17 @@ RUN go get gopkg.in/yaml.v2
 
 # Set the working directory
 
-RUN mkdir -p $GOPATH/src/core-config-seed-go
-WORKDIR $GOPATH/src/core-config-seed-go
+WORKDIR $GOPATH/src/github.com/edgexfoundry/core-config-seed-go
 
 # Copy go source files
-
-COPY ./configseed ./configseed
-COPY ./main ./main
+COPY . .
 
 # Build
+RUN apk update && apk add make
+RUN make test
+RUN make build
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o core-config-seed-go -a -ldflags '-extldflags "-static"' main/main.go
+#
 
 FROM arm64v8/ubuntu:artful
 
@@ -57,7 +57,7 @@ ENV CONSUL_ARGS="-server -client=0.0.0.0 -bootstrap -ui"
 WORKDIR $APP_DIR
 
 # Copy files
-COPY --from=builder /go/src/core-config-seed-go/$APP .
+COPY --from=builder /go/src/github.com/edgexfoundry/core-config-seed-go/$APP .
 COPY ./launch-consul-config.sh .
 COPY ./docker-entrypoint.sh .
 COPY ./res ./res
