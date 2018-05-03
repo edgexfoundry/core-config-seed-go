@@ -39,7 +39,9 @@ RUN apk update && apk add make
 RUN make test
 RUN make build
 
+# Consul Docker image for EdgeX Foundry
 FROM consul:0.7.3
+RUN apk add --no-cache bash
 
 # environment variables
 ENV APP_DIR=/edgex/core-config-seed-go
