@@ -17,9 +17,11 @@
 package main
 
 import (
-	"core-config-seed-go/configseed"
+	"github.com/edgexfoundry/core-config-seed-go/configseed"
 )
 
+var Version string = "master"
+
 func main() {
-	configseed.RunApplication("./res/configuration.json", "./res/banner.txt");
+	configseed.RunApplication("./res/configuration.json", "./res/banner.txt")
 }
