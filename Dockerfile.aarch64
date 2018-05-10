@@ -24,6 +24,9 @@ RUN make build
 
 FROM arm64v8/ubuntu:artful
 
+LABEL license='SPDX-License-Identifier: Apache-2.0' \
+      copyright='Copyright (c) 2017: Steve Osselton'
+
 # Install consul and create data directory
 RUN apt-get update && apt-get install consul gosu -y --no-install-recommends \
   && apt-get clean && rm -rf /var/lib/apt/lists/* && mkdir -p /consul/data \

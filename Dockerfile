@@ -41,6 +41,10 @@ RUN make build
 
 # Consul Docker image for EdgeX Foundry
 FROM consul:0.7.3
+
+LABEL license='SPDX-License-Identifier: Apache-2.0' \
+      copyright='Copyright (c) 2017: Samsung'
+
 RUN apk add --no-cache bash
 
 # environment variables
