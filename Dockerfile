@@ -24,6 +24,8 @@ ENV PATH=$GOPATH/bin:$PATH
 
 # download dependent go packages
 RUN apk add --update git
+RUN go get github.com/BurntSushi/toml
+RUN go get github.com/fatih/structs
 RUN go get github.com/hashicorp/consul/api
 RUN go get github.com/magiconair/properties
 RUN go get gopkg.in/yaml.v2

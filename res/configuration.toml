@@ -1,0 +1,11 @@
+ConfigPath = './config'
+GlobalPrefix = 'config'
+ConsulProtocol = 'http'
+ConsulHost = 'localhost'
+ConsulPort = 8500
+IsReset = true
+FailLimit = 30
+FailWaitTime = 3
+AcceptablePropertyExtensions = ['.toml','.yaml', '.yml', '.properties']
+YamlExtensions = ['.yaml','.yml']
+TomlExtensions = ['.toml']
