@@ -17,16 +17,9 @@
 package main
 
 import (
-	"github.com/edgexfoundry/core-config-seed-go/pkg"
-	"github.com/edgexfoundry/core-config-seed-go/pkg/config"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/fatih/structs"
-	consulapi "github.com/hashicorp/consul/api"
-	"github.com/magiconair/properties"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -34,11 +27,19 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"github.com/edgexfoundry/core-config-seed-go/pkg"
+	"github.com/edgexfoundry/core-config-seed-go/pkg/config"
+	"github.com/fatih/structs"
+	consulapi "github.com/hashicorp/consul/api"
+	"github.com/magiconair/properties"
+	"gopkg.in/yaml.v2"
 )
 
 var Version = "master"
 
-const CONSUL_STATUS_PATH = "/v1/agent/self"
+const consulStatusPath = "/v1/agent/self"
 
 // Hook the functions in the other packages for the tests.
 var (
@@ -49,27 +50,6 @@ var (
 	consulKeys          = (*consulapi.KV).Keys
 	httpGet             = http.Get
 )
-
-// Configuration struct used to parse the JSON configuration file.
-type CoreConfig struct {
-	ConfigPath                   string
-	GlobalPrefix                 string
-	ConsulProtocol               string
-	ConsulHost                   string
-	ConsulPort                   int
-	IsReset                      bool
-	FailLimit                    int
-	FailWaitTime                 int
-	AcceptablePropertyExtensions []string
-	YamlExtensions               []string
-	TomlExtensions               []string
-}
-
-// Map to cover key/value.
-type ConfigProperties map[string]string
-
-// Bootstrap config for consul et. al.
-var coreconfig = CoreConfig{}
 
 func main() {
 
@@ -82,18 +62,16 @@ func main() {
 	flag.StringVar(&useProfile, "p", "", "Specify a profile other than default.")
 	flag.Parse()
 
-	//Read init boot strap config.  NOTE may not be needed in the future at all.
-
 	// Configuration data for the config-seed service.
-	coreconfig := &CoreConfig{}
+	coreConfig := &pkg.CoreConfig{}
 
-	err := config.LoadFromFile(useProfile, coreconfig)
+	err := config.LoadFromFile(useProfile, coreConfig)
 	if err != nil {
 		logBeforeTermination(err)
 		return
 	}
 
-	consulClient, err := getConsulCient(*coreconfig)
+	consulClient, err := getConsulClient(*coreConfig)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -101,11 +79,11 @@ func main() {
 
 	kv := consulClient.KV()
 
-	if coreconfig.IsReset {
+	if coreConfig.IsReset {
 		removeStoredConfig(kv)
-		loadConfigFromPath(*coreconfig, kv)
-	} else if !isConfigInitialized(*coreconfig, kv) {
-		loadConfigFromPath(*coreconfig, kv)
+		loadConfigFromPath(*coreConfig, kv)
+	} else if !isConfigInitialized(*coreConfig, kv) {
+		loadConfigFromPath(*coreConfig, kv)
 	}
 
 	printBanner("./res/banner.txt")
@@ -128,17 +106,17 @@ func logBeforeTermination(err error) {
 
 // Get handle of Consul client using the URL from configuration info.
 // Before getting handle, it tries to receive a response from a Consul agent by simple health-check.
-func getConsulCient(coreconfig CoreConfig) (*consulapi.Client, error) {
+func getConsulClient(coreConfig pkg.CoreConfig) (*consulapi.Client, error) {
 
-	consulUrl := coreconfig.ConsulProtocol + "://" + coreconfig.ConsulHost + ":" + strconv.Itoa(coreconfig.ConsulPort)
+	consulUrl := coreConfig.ConsulProtocol + "://" + coreConfig.ConsulHost + ":" + strconv.Itoa(coreConfig.ConsulPort)
 
 	// Check the connection to Consul
 	fails := 0
-	for fails < coreconfig.FailLimit {
-		resp, err := httpGet(consulUrl + CONSUL_STATUS_PATH)
+	for fails < coreConfig.FailLimit {
+		resp, err := httpGet(consulUrl + consulStatusPath)
 		if err != nil {
 			fmt.Println(err.Error())
-			time.Sleep(time.Second * time.Duration(coreconfig.FailWaitTime))
+			time.Sleep(time.Second * time.Duration(coreConfig.FailWaitTime))
 			fails++
 			continue
 		}
@@ -147,7 +125,7 @@ func getConsulCient(coreconfig CoreConfig) (*consulapi.Client, error) {
 			break
 		}
 	}
-	if fails >= coreconfig.FailLimit {
+	if fails >= coreConfig.FailLimit {
 		return nil, errors.New("Cannot get connection to Consul")
 	}
 
@@ -160,40 +138,40 @@ func getConsulCient(coreconfig CoreConfig) (*consulapi.Client, error) {
 
 // Remove all values in Consul K/V store, under the globalprefix which is presents in configuration file.
 func removeStoredConfig(kv *consulapi.KV) {
-	_, err := consulDeleteTree(kv, coreconfig.GlobalPrefix, nil)
+	_, err := consulDeleteTree(kv, pkg.CoreConfiguration.GlobalPrefix, nil)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Println("All values under the globalPrefix(\"" + coreconfig.GlobalPrefix + "\") is removed.")
+	fmt.Println("All values under the globalPrefix(\"" + pkg.CoreConfiguration.GlobalPrefix + "\") is removed.")
 }
 
 // Check if Consul has been configured by trying to get any key that starts with a globalprefix.
-func isConfigInitialized(coreconfig CoreConfig, kv *consulapi.KV) bool {
-	keys, _, err := consulKeys(kv, coreconfig.GlobalPrefix, "", nil)
+func isConfigInitialized(coreConfig pkg.CoreConfig, kv *consulapi.KV) bool {
+	keys, _, err := consulKeys(kv, coreConfig.GlobalPrefix, "", nil)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
 	}
 
 	if len(keys) > 0 {
-		fmt.Printf("%s exists! The configuration data has been initialized.\n", coreconfig.GlobalPrefix)
+		fmt.Printf("%s exists! The configuration data has been initialized.\n", coreConfig.GlobalPrefix)
 		return true
 	}
-	fmt.Printf("%s doesn't exist! Start importing configuration data.\n", coreconfig.GlobalPrefix)
+	fmt.Printf("%s doesn't exist! Start importing configuration data.\n", coreConfig.GlobalPrefix)
 	return false
 }
 
 // Load a property file(.yaml or .properties) and parse it to a map.
-func readPropertyFile(coreconfig CoreConfig, filePath string) (ConfigProperties, error) {
+func readPropertyFile(coreConfig pkg.CoreConfig, filePath string) (pkg.ConfigProperties, error) {
 
 	// prob should not be here
 	configuration := &pkg.ConfigurationStruct{}
 
-	if isTomlExtension(coreconfig, filePath) {
+	if isTomlExtension(coreConfig, filePath) {
 		// Read .toml
 		return readTomlFile(filePath, configuration)
-	} else if isYamlExtension(coreconfig, filePath) {
+	} else if isYamlExtension(coreConfig, filePath) {
 		// Read .yaml/.yml file
 		return readYamlFile(filePath)
 	} else {
@@ -204,19 +182,19 @@ func readPropertyFile(coreconfig CoreConfig, filePath string) (ConfigProperties,
 }
 
 // Load all config files and put the configuration info to Consul K/V store.
-func loadConfigFromPath(coreconfig CoreConfig, kv *consulapi.KV) {
-	err := filepath.Walk(coreconfig.ConfigPath, func(path string, info os.FileInfo, err error) error {
+func loadConfigFromPath(coreConfig pkg.CoreConfig, kv *consulapi.KV) {
+	err := filepath.Walk(coreConfig.ConfigPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
 		// Skip directories & unacceptable property extension
-		if info.IsDir() || !isAcceptablePropertyExtensions(coreconfig, info.Name()) {
+		if info.IsDir() || !isAcceptablePropertyExtensions(coreConfig, info.Name()) {
 			return nil
 		}
 
 		dir, file := filepath.Split(path)
-		configPath, err := filepath.Rel(".", coreconfig.ConfigPath)
+		configPath, err := filepath.Rel(".", coreConfig.ConfigPath)
 		if err != nil {
 			return err
 		}
@@ -225,13 +203,13 @@ func loadConfigFromPath(coreconfig CoreConfig, kv *consulapi.KV) {
 		fmt.Println("found config file:", file, "in context", dir)
 
 		// Parse *.properties
-		props, err := readPropertyFile(coreconfig, path)
+		props, err := readPropertyFile(coreConfig, path)
 		if err != nil {
 			return err
 		}
 
 		// Put config properties to Consul K/V store.
-		prefix := coreconfig.GlobalPrefix + "/" + dir
+		prefix := coreConfig.GlobalPrefix + "/" + dir
 		for k := range props {
 			p := &consulapi.KVPair{Key: prefix + k, Value: []byte(props[k])}
 			if _, err := consulPut(kv, p, nil); err != nil {
@@ -246,8 +224,8 @@ func loadConfigFromPath(coreconfig CoreConfig, kv *consulapi.KV) {
 	}
 }
 
-func isAcceptablePropertyExtensions(coreconfig CoreConfig, file string) bool {
-	for _, v := range coreconfig.AcceptablePropertyExtensions {
+func isAcceptablePropertyExtensions(coreConfig pkg.CoreConfig, file string) bool {
+	for _, v := range coreConfig.AcceptablePropertyExtensions {
 		if v == filepath.Ext(file) {
 			return true
 		}
@@ -256,8 +234,8 @@ func isAcceptablePropertyExtensions(coreconfig CoreConfig, file string) bool {
 }
 
 // Check whether a filename extension is yaml or not.
-func isYamlExtension(coreconfig CoreConfig, file string) bool {
-	for _, v := range coreconfig.YamlExtensions {
+func isYamlExtension(coreConfig pkg.CoreConfig, file string) bool {
+	for _, v := range coreConfig.YamlExtensions {
 		if v == filepath.Ext(file) {
 			return true
 		}
@@ -265,8 +243,8 @@ func isYamlExtension(coreconfig CoreConfig, file string) bool {
 	return false
 }
 
-func isTomlExtension(coreconfig CoreConfig, file string) bool {
-	for _, v := range coreconfig.TomlExtensions {
+func isTomlExtension(coreConfig pkg.CoreConfig, file string) bool {
+	for _, v := range coreConfig.TomlExtensions {
 		if v == filepath.Ext(file) {
 			return true
 		}
@@ -274,9 +252,9 @@ func isTomlExtension(coreconfig CoreConfig, file string) bool {
 	return false
 }
 
-func readTomlFile(filePath string, configuration interface{}) (ConfigProperties, error) {
+func readTomlFile(filePath string, configuration interface{}) (pkg.ConfigProperties, error) {
 
-	configProps := ConfigProperties{}
+	configProps := pkg.ConfigProperties{}
 
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -307,16 +285,15 @@ func readTomlFile(filePath string, configuration interface{}) (ConfigProperties,
 		case bool:
 			form[k] = strconv.FormatBool(v)
 		}
-
 	}
 
 	return form, nil
 }
 
 // Parse a yaml file to a map.
-func readYamlFile(filePath string) (ConfigProperties, error) {
+func readYamlFile(filePath string) (pkg.ConfigProperties, error) {
 
-	configProps := ConfigProperties{}
+	configProps := pkg.ConfigProperties{}
 
 	contents, err := ioutil.ReadFile(filePath)
 
@@ -338,9 +315,9 @@ func readYamlFile(filePath string) (ConfigProperties, error) {
 }
 
 // Parse a properties file to a map.
-func readPropertiesFile(filePath string) (ConfigProperties, error) {
+func readPropertiesFile(filePath string) (pkg.ConfigProperties, error) {
 
-	configProps := ConfigProperties{}
+	configProps := pkg.ConfigProperties{}
 
 	props, err := properties.LoadFile(filePath, properties.UTF8)
 	if err != nil {

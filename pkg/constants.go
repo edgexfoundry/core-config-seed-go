@@ -33,3 +33,27 @@ type ConfigurationStruct struct {
 	SupportNotificationsSubscriptionURL string
 	SupportNotificationsTransmissionURL string
 }
+
+// Configuration data for the metadata service
+var Configuration  = ConfigurationStruct{} // Needs to be initialized before use
+
+// Configuration struct used to parse the JSON configuration file.
+type CoreConfig struct {
+	ConfigPath                   string
+	GlobalPrefix                 string
+	ConsulProtocol               string
+	ConsulHost                   string
+	ConsulPort                   int
+	IsReset                      bool
+	FailLimit                    int
+	FailWaitTime                 int
+	AcceptablePropertyExtensions []string
+	YamlExtensions               []string
+	TomlExtensions               []string
+}
+
+var CoreConfiguration  = CoreConfig{}    // Needs to be initialized before use
+
+// Map to cover key/value.
+type ConfigProperties map[string]string
+
