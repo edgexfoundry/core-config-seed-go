@@ -19,7 +19,6 @@ COPY . .
 
 # Build
 RUN apk update && apk add make
-RUN make test
 RUN make build
 
 #
