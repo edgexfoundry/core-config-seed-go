@@ -8,7 +8,7 @@
 .PHONY: build test docker
 
 VERSION=$(shell cat ./VERSION)
-GOFLAGS=-ldflags "-X core-config-seed-go/main.Version=$(VERSION) -extldflags '-static'"
+GOFLAGS=-ldflags "-X github.com/edgexfoundry/core-config-seed-go.Version=$(VERSION) -extldflags '-static'"
 GIT_SHA=$(shell git rev-parse --short HEAD)
 build:
 	CGO_ENABLED=0 go build -o core-config-seed-go $(GOFLAGS) -a main.go
