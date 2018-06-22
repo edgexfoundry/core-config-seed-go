@@ -18,11 +18,7 @@ test:
 	go vet ./...
 
 prepare:
-	go get github.com/hashicorp/consul/api
-	go get github.com/magiconair/properties
-	go get gopkg.in/yaml.v2
-	go get github.com/fatih/structs
-	go get github.com/BurntSushi/toml
+	glide install
 
 docker_core_config_seed_go:
 	docker build \
