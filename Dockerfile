@@ -38,7 +38,6 @@ COPY . .
 
 # build
 RUN apk update && apk add make
-RUN make test
 RUN make build
 
 # Consul Docker image for EdgeX Foundry
