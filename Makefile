@@ -8,7 +8,7 @@
 .PHONY: build test docker
 
 VERSION=$(shell cat ./VERSION)
-GOFLAGS=-ldflags "-X core-config-seed-go/main.Version=$(VERSION) -extldflags '-static'"
+GOFLAGS=-ldflags "-X github.com/edgexfoundry/core-config-seed-go.Version=$(VERSION) -extldflags '-static'"
 GIT_SHA=$(shell git rev-parse --short HEAD)
 build:
 	CGO_ENABLED=0 go build -o core-config-seed-go $(GOFLAGS) -a main.go
@@ -18,11 +18,7 @@ test:
 	go vet ./...
 
 prepare:
-	go get github.com/hashicorp/consul/api
-	go get github.com/magiconair/properties
-	go get gopkg.in/yaml.v2
-	go get github.com/fatih/structs
-	go get github.com/BurntSushi/toml
+	glide install
 
 docker_core_config_seed_go:
 	docker build \
