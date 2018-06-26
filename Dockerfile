@@ -16,7 +16,7 @@
 ###############################################################################
 
 # Docker image for building EdgeX Foundry Config Seed
-FROM golang:1.8-alpine AS build-env
+FROM golang:1.9-alpine AS build-env
 
 # environment variables
 ENV GOPATH=/go
