@@ -9,7 +9,7 @@
 
 VERSION=$(shell cat ./VERSION)
 GOFLAGS=-ldflags "-X github.com/edgexfoundry/core-config-seed-go.Version=$(VERSION) -extldflags '-static'"
-GIT_SHA=$(shell git rev-parse --short HEAD)
+GIT_SHA=$(shell git rev-parse HEAD)
 build:
 	CGO_ENABLED=0 go build -o core-config-seed-go $(GOFLAGS) -a main.go
 
