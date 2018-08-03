@@ -7,6 +7,7 @@
 
 .PHONY: build test docker
 
+DOCKERS=docker_core_config_seed_go
 VERSION=$(shell cat ./VERSION)
 GOFLAGS=-ldflags "-X github.com/edgexfoundry/core-config-seed-go.Version=$(VERSION) -extldflags '-static'"
 GIT_SHA=$(shell git rev-parse HEAD)
@@ -20,7 +21,7 @@ test:
 prepare:
 	glide install
 
-docker: docker_core_config_seed_go
+docker: $(DOCKERS)
 
 docker_core_config_seed_go:
 	docker build \
@@ -29,6 +30,8 @@ docker_core_config_seed_go:
 			-t edgexfoundry/docker-core-config-seed-go:$(GIT_SHA) \
 			-t edgexfoundry/docker-core-config-seed-go:$(VERSION)-dev \
 			.
+
+# Used by CI ARM builder
 docker_core_config_seed_go_arm:
 	docker build \
 			-f Dockerfile.aarch64 \
