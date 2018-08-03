@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -34,7 +35,6 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/magiconair/properties"
 	"gopkg.in/yaml.v2"
-	"bufio"
 )
 
 var Version = "master"
