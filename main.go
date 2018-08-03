@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -28,7 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/edgexfoundry/core-config-seed-go/pkg"
 	"github.com/edgexfoundry/core-config-seed-go/pkg/config"
 	"github.com/fatih/structs"
@@ -165,12 +165,9 @@ func isConfigInitialized(coreConfig pkg.CoreConfig, kv *consulapi.KV) bool {
 // Load a property file(.yaml or .properties) and parse it to a map.
 func readPropertyFile(coreConfig pkg.CoreConfig, filePath string) (pkg.ConfigProperties, error) {
 
-	// prob should not be here
-	configuration := &pkg.ConfigurationStruct{}
-
 	if isTomlExtension(coreConfig, filePath) {
 		// Read .toml
-		return readTomlFile(filePath, configuration)
+		return readTomlFile(filePath)
 	} else if isYamlExtension(coreConfig, filePath) {
 		// Read .yaml/.yml file
 		return readYamlFile(filePath)
@@ -252,42 +249,28 @@ func isTomlExtension(coreConfig pkg.CoreConfig, file string) bool {
 	return false
 }
 
-func readTomlFile(filePath string, configuration interface{}) (pkg.ConfigProperties, error) {
-
+//This works for now because our TOML is simply key/value.
+//Will not work once we go hierarchical
+func readTomlFile(filePath string) (pkg.ConfigProperties, error) {
 	configProps := pkg.ConfigProperties{}
 
-	contents, err := ioutil.ReadFile(filePath)
+	file, err := os.Open(filePath)
 	if err != nil {
 		return configProps, fmt.Errorf("could not load configuration file (%s): %v", filePath, err.Error())
 	}
+	defer file.Close()
 
-	// Decode the configuration from TOML
-	err = toml.Unmarshal(contents, configuration)
-	if err != nil {
-		return configProps, fmt.Errorf("unable to parse configuration file (%s): %v", filePath, err.Error())
-	}
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
 
-	m := structs.Map(configuration)
-
-	form := make(map[string]string)
-
-	for k, v := range m {
-		switch v := v.(type) {
-		case string:
-			form[k] = v
-		case int, int8, int16, int32, int64:
-			iInt := v.(int)
-			iInt, ok := v.(int)
-			if !ok {
-				// issues in cast
-			}
-			form[k] = strconv.Itoa(iInt)
-		case bool:
-			form[k] = strconv.FormatBool(v)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "=") {
+			tokens := strings.Split(scanner.Text(), "=")
+			configProps[strings.Trim(tokens[0], " '")] = strings.Trim(tokens[1], " '")
 		}
 	}
-
-	return form, nil
+	return configProps, nil
 }
 
 // Parse a yaml file to a map.
