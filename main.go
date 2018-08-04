@@ -29,8 +29,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexfoundry/core-config-seed-go/pkg"
-	"github.com/edgexfoundry/core-config-seed-go/pkg/config"
+	"github.com/edgexfoundry/core-config-seed-go/internal/pkg"
+	"github.com/edgexfoundry/core-config-seed-go/internal/pkg/config"
 	"github.com/fatih/structs"
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/magiconair/properties"
