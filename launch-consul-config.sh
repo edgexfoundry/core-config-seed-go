@@ -20,11 +20,11 @@ set -e
 
 mkdir -p /edgex/logs/
 
-rm -rf /consul/data/* && ./docker-entrypoint.sh agent $CONSUL_ARGS | tee /edgex/logs/core-consul.log &
+rm -rf /consul/data/*
 
 echo "Waiting for $WAIT_FOR_A_WHILE seconds until consul is configured"
 sleep $WAIT_FOR_A_WHILE
 
-./$APP
+./$APP --profile=docker
 
 wait

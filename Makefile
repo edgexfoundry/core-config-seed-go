@@ -20,6 +20,8 @@ test:
 prepare:
 	glide install
 
+docker: docker_core_config_seed_go
+
 docker_core_config_seed_go:
 	docker build \
 			-f Dockerfile \
