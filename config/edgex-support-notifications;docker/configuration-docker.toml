@@ -1,5 +1,5 @@
 ApplicationName = 'edgex-support-notifications'
-ConsulProfilesActive = 'docker;go'
+ConsulProfilesActive = 'docker'
 HeartBeatTime = 300000
 HeartBeatMsg = 'Support Notifications heart beat'
 AppOpenMsg = 'This is the Support Notifications Micro Service'
