@@ -16,7 +16,7 @@
 ###############################################################################
 
 # Docker image for building EdgeX Foundry Config Seed
-FROM golang:1.8-alpine AS build-env
+FROM golang:1.9-alpine AS build-env
 
 # environment variables
 ENV GOPATH=/go
@@ -41,7 +41,8 @@ RUN apk update && apk add make
 RUN make build
 
 # Consul Docker image for EdgeX Foundry
-FROM consul:0.7.3
+#FROM consul:0.7.3
+FROM golang:1.9-alpine
 
 LABEL license='SPDX-License-Identifier: Apache-2.0' \
       copyright='Copyright (c) 2017: Samsung'
